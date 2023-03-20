@@ -73,7 +73,11 @@ namespace PTSTestWSDL.Pages
             var ebatlar = new List<Ebat>();
             ebatlar.Add(new Ebat { Agirlik = 1, Boy = 100, En = 100, Yukseklik = 100 });
             gonderiEkleModel.Ebatlar = ebatlar;
-            var resultGonderiEkle = cargo.GonderiEkle(gonderiEkleModel);
+            //var resultGonderiEkle = cargo.GonderiEkle(gonderiEkleModel);
+            GetPriceModel getPriceModel = new GetPriceModel();
+            getPriceModel.UlkeKodu = "US";
+            getPriceModel.Ebatlar = ebatlar;
+            var prices = cargo.GetPrices(getPriceModel);
             //AWB=2280064201
             //"AWB=2280064233"
         }

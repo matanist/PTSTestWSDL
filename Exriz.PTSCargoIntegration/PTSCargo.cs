@@ -112,6 +112,44 @@ namespace Exriz.PTSCargoIntegration
                 }
             }
         }
+        public string GetPrices(GetPriceModel getPricesModel)
+        {
+            _action = "/getPrices";
+
+            XmlDocument soapEnvelopeXml = CreateSoapEnvelopeGetPrices(getPricesModel);
+            HttpWebRequest webRequest = CreateWebRequest(_url, _action);
+            InsertSoapEnvelopeIntoWebRequest(soapEnvelopeXml, webRequest);
+
+            // begin async call to web request.
+            IAsyncResult asyncResult = webRequest.BeginGetResponse(null, null);
+
+            // suspend this thread until call is complete. You might want to
+            // do something usefull here like update your UI.
+            asyncResult.AsyncWaitHandle.WaitOne();
+
+            // get the response from the completed web request.
+            string soapResult;
+            try
+            {
+                using (WebResponse webResponse = webRequest.EndGetResponse(asyncResult))
+                {
+                    using (StreamReader rd = new StreamReader(webResponse.GetResponseStream()))
+                    {
+                        soapResult = rd.ReadToEnd();
+                        XmlDocument xmlDocument = new XmlDocument();
+                        xmlDocument.LoadXml(soapResult);
+                        var resultText = xmlDocument.InnerText;
+                        return resultText;
+                    }
+                }
+            }
+            catch (Exception exp)
+            {
+
+                return exp.Message;
+            }
+
+        }
         private HttpWebRequest CreateWebRequest(string url, string action)
         {
             HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(url);
@@ -234,6 +272,40 @@ namespace Exriz.PTSCargoIntegration
             return soapEnvelopeDocument;
             //soapenc:arrayType=""urn:line[2]""
             //soapenc:arrayType""urn:dim[2]""
+        }
+        private XmlDocument CreateSoapEnvelopeGetPrices(GetPriceModel getPriceModel)
+        {
+            XmlDocument soapEnvelopeDocument = new XmlDocument();
+
+            var xml =
+            @$"<soapenv:Envelope xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"" xmlns:soapenv=""http://schemas.xmlsoap.org/soap/envelope/"" xmlns:urn=""urn:server"" xmlns:SOAP-ENC=""http://schemas.xmlsoap.org/soap/encoding/"">
+            <soapenv:Header/>
+               <soapenv:Body>
+                  <urn:getPrices soapenv:encodingStyle=""http://schemas.xmlsoap.org/soap/encoding/"">
+                     <kullanici xsi:type=""xsd:string"">{_userName}</kullanici>
+                     <sifre xsi:type=""xsd:string"">{_password}</sifre>
+                     <ulkekodu xsi:type=""xsd:string"">{getPriceModel.UlkeKodu}</ulkekodu>";
+
+            xml += @"<ebat xsi:type=""urn:dims"" SOAP-ENC:arrayType=""urn:dim[]"">";
+            if (getPriceModel.Ebatlar != null)
+                foreach (var ebat in getPriceModel.Ebatlar)
+                {
+                    xml += @$"
+                    <dim>
+                        <en xsi:type=""xsd:string"">{ebat.En}</en>
+                        <boy xsi:type=""xsd:decimal"">{ebat.Boy}</boy>
+                        <yukseklik xsi:type=""xsd:string"">{ebat.Yukseklik}</yukseklik>
+                        <agirlik xsi:type=""xsd:decimal"">{ebat.Agirlik}</agirlik>
+                    </dim>";
+                }
+            xml += "</ebat>" +
+                "</urn:getPrices>";
+
+            xml += @$"
+               </soapenv:Body>
+            </soapenv:Envelope>";
+            soapEnvelopeDocument.LoadXml(xml);
+            return soapEnvelopeDocument;
         }
         private XmlDocument CreateSoapEnvelope()
         {
