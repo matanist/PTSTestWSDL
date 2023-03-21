@@ -150,6 +150,14 @@ namespace Exriz.PTSCargoIntegration
             }
 
         }
+        public string GetTCMBKur(string currencyCode)
+        {
+            string exchangeRate = "http://www.tcmb.gov.tr/kurlar/today.xml";
+            var xmlDoc = new XmlDocument();
+            xmlDoc.Load(exchangeRate);
+            string tl = xmlDoc.SelectSingleNode($"Tarih_Date/Currency[@Kod='{currencyCode}']/BanknoteBuying").InnerXml;
+            return tl;
+        }
         private HttpWebRequest CreateWebRequest(string url, string action)
         {
             HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(url);
@@ -348,5 +356,6 @@ namespace Exriz.PTSCargoIntegration
                 soapEnvelopeXml.Save(stream);
             }
         }
+
     }
 }
